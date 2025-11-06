@@ -1,0 +1,5 @@
+{
+  "name": "Magistra Language Learning Platform",
+  "description": "A complete language learning interface that demonstrates the full user workflow from text upload to learning completion, featuring draggable windows, multiple layouts, and an AI assistant.",
+  "requestFramePermissions": []
+}
