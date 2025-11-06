@@ -52,14 +52,15 @@ export class AudioService {
     }
 
     // Check if Gemini API key is available
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
       console.warn('Gemini API key not available, falling back to browser TTS');
       this.fallbackTTS(text, language);
       return null;
     }
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
         contents: [{ parts: [{ text }] }],
