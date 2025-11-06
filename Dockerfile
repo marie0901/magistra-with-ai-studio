@@ -12,6 +12,10 @@ RUN yarn install
 # Copy source code
 COPY . .
 
+# Accept build argument for API key
+ARG VITE_GEMINI_API_KEY
+ENV VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY
+
 # Build the application
 RUN yarn build
 
