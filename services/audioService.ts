@@ -52,7 +52,7 @@ export class AudioService {
     }
 
     // Check if Gemini API key is available
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY;
     if (!apiKey) {
       console.warn('Gemini API key not available, falling back to browser TTS');
       this.fallbackTTS(text, language);
