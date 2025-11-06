@@ -16,6 +16,10 @@ COPY . .
 ARG VITE_GEMINI_API_KEY
 ENV VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY
 
+# Debug: Show environment variables
+RUN echo "Build-time VITE_GEMINI_API_KEY: $VITE_GEMINI_API_KEY"
+RUN env | grep VITE
+
 # Build the application
 RUN yarn build
 
