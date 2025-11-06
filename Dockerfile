@@ -3,10 +3,14 @@ FROM node:20-alpine as build
 
 WORKDIR /app
 
+# Install yarn globally
+RUN npm install -g yarn
+
 # Copy package files
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies for build)
+# Use npm ci for reliable dependency installation in Cloud Run
 RUN npm ci
 
 # Copy source code

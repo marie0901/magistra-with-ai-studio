@@ -20,12 +20,18 @@ A sophisticated multi-window language learning interface built with React and Ty
    npm install
    ```
 
-2. Start development server:
+2. Configure environment (for TTS functionality):
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local and add your Gemini API key
+   ```
+
+3. Start development server:
    ```bash
    npm run dev
    ```
 
-3. Run tests:
+4. Run tests:
    ```bash
    npm run test:headed
    ```
@@ -39,16 +45,34 @@ A sophisticated multi-window language learning interface built with React and Ty
 
 ## Current Status
 
+### ✅ Phase 1 Complete: Environment & Text-to-Speech
 - ✅ Complete UI/UX implementation
 - ✅ Professional onboarding flow
 - ✅ Multi-window management system
 - ✅ Comprehensive test suite
-- ❌ Backend integration (mocked)
-- ❌ Real AI services (mocked)
+- ✅ **Real Text-to-Speech** (Gemini TTS + browser fallback)
+- ✅ **Environment configuration** with API key management
+- ✅ **Audio service** with caching and error handling
+
+### 🚧 In Progress: Core AI Integration
+- ❌ Real chat functionality (mocked)
+- ❌ Translation evaluation (mocked)
+- ❌ Text simplification (mocked)
 
 ## Development
 
-The application currently uses mock data and simulated AI responses. Ready for backend integration to replace mock services with real APIs.
+### Phase 1: Environment & TTS ✅
+- Real text-to-speech using Google Gemini API
+- Environment configuration with `.env.local`
+- Audio service with caching and fallback
+- Enhanced audio controls in Learning Session
+
+### Next: Phase 2 - Core AI Integration
+- Replace mock chat with real Gemini API
+- Implement real translation evaluation
+- Add text simplification service
+
+See `setup.md` for detailed Phase 1 implementation notes.
 
 ## License
 
