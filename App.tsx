@@ -319,7 +319,7 @@ const App: React.FC = () => {
         });
     };
     
-    const handleNextFragment = (score: number) => {
+    const handleNextFragment = async (score: number) => {
         if (currentFragmentId === null) return;
 
         // 1. Mark current fragment as completed
@@ -333,17 +333,29 @@ const App: React.FC = () => {
             const fragmentToSimplify = fragmentsAfterEvaluation[nextPendingIndex];
             const originalText = fragmentToSimplify.text;
             
-            // Mock AI simplification
-            const splitPoint = originalText.indexOf(',');
-            const simplifiedText = splitPoint > 0
-                ? originalText.substring(0, splitPoint) + '.'
-                : originalText.substring(0, Math.floor(originalText.length * 0.7)) + '...';
+            try {
+                const { geminiService } = await import('./services/geminiService');
+                const simplifiedText = await geminiService.simplifyText(originalText, 'beginner');
+                
+                fragmentsAfterEvaluation = fragmentsAfterEvaluation.map((f, index) =>
+                    index === nextPendingIndex
+                        ? { ...f, text: simplifiedText, isSimplified: true }
+                        : f
+                );
+            } catch (error) {
+                console.error('Text simplification failed:', error);
+                // Fallback to basic simplification
+                const splitPoint = originalText.indexOf(',');
+                const simplifiedText = splitPoint > 0
+                    ? originalText.substring(0, splitPoint) + '.'
+                    : originalText.substring(0, Math.floor(originalText.length * 0.7)) + '...';
 
-            fragmentsAfterEvaluation = fragmentsAfterEvaluation.map((f, index) =>
-                index === nextPendingIndex
-                    ? { ...f, text: simplifiedText, isSimplified: true }
-                    : f
-            );
+                fragmentsAfterEvaluation = fragmentsAfterEvaluation.map((f, index) =>
+                    index === nextPendingIndex
+                        ? { ...f, text: simplifiedText, isSimplified: true }
+                        : f
+                );
+            }
         }
 
         // 3. Find the next fragment to mark as current
@@ -407,14 +419,37 @@ const App: React.FC = () => {
         setPendingSessionOffset(newOffset);
     };
 
-    const handleSendMessage = (message: string) => {
+    const handleSendMessage = async (message: string) => {
         const newUserMessage: ChatMessage = { sender: 'user', text: message };
         setChatHistory(prev => [...prev, newUserMessage]);
 
-        setTimeout(() => {
-            const aiResponse: ChatMessage = { sender: 'ai', text: "That's a great question! Let me explain..." };
-            setChatHistory(prev => [...prev, aiResponse]);
-        }, 1500);
+        console.log('🤖 Starting chat request for message:', message);
+        
+        try {
+            console.log('🤖 Importing geminiService...');
+            const { geminiService } = await import('./services/geminiService');
+            console.log('🤖 GeminiService imported successfully');
+            
+            const context = `User is learning ${targetLanguage}. Current session has ${learningFragments.length} fragments.`;
+            console.log('🤖 Calling geminiService.chatResponse with context:', context);
+            
+            const aiResponse = await geminiService.chatResponse(message, context);
+            console.log('🤖 Received AI response:', aiResponse);
+            
+            const responseMessage: ChatMessage = {
+                sender: 'ai',
+                text: aiResponse
+            };
+            setChatHistory(prev => [...prev, responseMessage]);
+        } catch (error) {
+            console.error('🤖 Chat error details:', error);
+            console.error('🤖 Error stack:', error.stack);
+            const fallbackResponse: ChatMessage = {
+                sender: 'ai',
+                text: "I'm having trouble connecting right now, but I'm here to help with your language learning!"
+            };
+            setChatHistory(prev => [...prev, fallbackResponse]);
+        }
     };
 
     // Sticky Note Handlers

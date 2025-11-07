@@ -58,19 +58,34 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
     
     const progress = totalFragmentsInSession > 0 ? ((fragmentIndex + 1) / totalFragmentsInSession) * 100 : 0;
     
-    const handleCheck = () => {
+    const handleCheck = async () => {
         setIsLoading(true);
-        setTimeout(() => {
-            const score = Math.floor(Math.random() * 71) + 30; // Random score between 30 and 100
+        try {
+            const { geminiService } = await import('../services/geminiService');
+            const result = await geminiService.evaluateTranslation(
+                fragment.text,
+                translation,
+                targetLanguage
+            );
+            
+            setEvaluation({
+                score: result.score,
+                feedback: result.feedback,
+                correct: result.corrections || translation
+            });
+        } catch (error) {
+            console.error('Translation evaluation failed:', error);
+            // Fallback to mock evaluation
+            const score = Math.floor(Math.random() * 71) + 30;
             setEvaluation({
                 score,
                 feedback: score < 60 
                     ? "This translation could be improved. Let's try a simpler sentence next." 
-                    : "Good attempt! 'Weathered' could be better translated as 'resistido' rather than 'soportado'",
-                correct: "Sus muros de piedra habían resistido innumerables tormentas a lo largo de los siglos."
+                    : "Good attempt! Keep practicing to improve further.",
+                correct: translation
             });
-            setIsLoading(false);
-        }, 1500);
+        }
+        setIsLoading(false);
     };
     
     const handleNext = () => {
