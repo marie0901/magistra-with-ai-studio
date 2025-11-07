@@ -6,6 +6,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json yarn.lock ./
 
+# Install patch-package globally first to avoid build issues
+RUN yarn global add patch-package
+
 # Install all dependencies (including dev dependencies for build)
 RUN yarn install
 
