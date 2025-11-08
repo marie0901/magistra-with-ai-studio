@@ -58,7 +58,7 @@ const ChatView: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (msg: stri
                                 <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-slate-500"/></div>
                                 <div className="relative bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 p-3 rounded-lg max-w-xs">
                                     <div dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.text) }} />
-                                    <button onClick={() => onCreateSticker(msg.text, "AI Insight")} className="absolute -top-2 -right-2 bg-yellow-300 text-yellow-800 text-xs font-bold p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg hover:scale-110">
+                                    <button onClick={() => onCreateSticker(msg.text, msg.stickerTitle || "AI Insight")} className="absolute -top-2 -right-2 bg-yellow-300 text-yellow-800 text-xs font-bold p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg hover:scale-110">
                                         Make Sticker
                                     </button>
                                 </div>

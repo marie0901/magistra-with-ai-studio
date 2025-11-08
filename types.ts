@@ -21,6 +21,7 @@ export interface VocabularyItem {
 export interface ChatMessage {
   sender: 'user' | 'ai';
   text: string;
+  stickerTitle?: string;
 }
 
 export interface StickyNoteData {

@@ -32,7 +32,7 @@ const App: React.FC = () => {
     const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
     const [stickyNotes, setStickyNotes] = useState<StickyNoteData[]>(initialStickyNotes);
     const [customText, setCustomText] = useState<string>('');
-    const [settings, setSettings] = useState({ voiceId: 'Kore', fragmentCount: DEFAULT_SESSION_FRAGMENT_COUNT });
+    const [settings, setSettings] = useState({ voiceId: 'Puck', fragmentCount: DEFAULT_SESSION_FRAGMENT_COUNT });
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     // Update audio service when voice changes
@@ -526,7 +526,8 @@ const App: React.FC = () => {
             
             const responseMessage: ChatMessage = {
                 sender: 'ai',
-                text: aiResponse
+                text: aiResponse.text,
+                stickerTitle: aiResponse.stickerTitle
             };
             setChatHistory(prev => [...prev, responseMessage]);
         } catch (error) {

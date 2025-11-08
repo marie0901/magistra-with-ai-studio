@@ -12,11 +12,11 @@ interface SettingsModalProps {
 }
 
 const voices = [
-  { id: 'Kore', name: 'Kore (Default)' },
+  { id: 'Puck', name: 'Puck (Default)' },
+  { id: 'Kore', name: 'Kore' },
   { id: 'Charon', name: 'Charon' },
   { id: 'Fenrir', name: 'Fenrir' },
-  { id: 'Aoede', name: 'Aoede' },
-  { id: 'Puck', name: 'Puck' }
+  { id: 'Aoede', name: 'Aoede' }
 ];
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings, onSave }) => {

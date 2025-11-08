@@ -89,25 +89,47 @@ Provide specific feedback citing exact errors and corrections.`,
     }
   }
 
-  async chatResponse(message: string, context?: string): Promise<string> {
+  async chatResponse(message: string, context?: string): Promise<{text: string; stickerTitle: string}> {
     try {
       const response = await ai.models.generateContent({
         model: 'models/gemini-2.5-pro',
         contents: `USER'S QUESTION: "${message}"`,
         config: {
-          systemInstruction: `You are a friendly and knowledgeable language tutor AI. Your role is to help a student who is learning a new language.
-- Answer the user's questions clearly and concisely.
-- You can answer questions about grammar, vocabulary, verb conjugations, cultural context, or provide translations.
-- Keep your tone encouraging and helpful.
-- Focus on answering their specific question.
+          systemInstruction: `You are a grammar-focused language assistant. Provide direct, concise answers without greetings, encouragement, or conversational elements.
+- Answer only what is asked
+- Focus on grammar, vocabulary, conjugations, and translations
+- Use minimal words
+- No "great question" or "keep practicing" comments
+- Be factual and precise
 ${context ? `\nContext: ${context}` : ''}`,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              text: {
+                type: Type.STRING,
+                description: 'Direct answer to the user question'
+              },
+              stickerTitle: {
+                type: Type.STRING,
+                description: 'Short 2-4 word title for creating a sticker from this response'
+              }
+            }
+          }
         },
       });
       
-      return response.text.trim() || "I'm here to help with your language learning journey!";
+      const result = JSON.parse(response.text.trim());
+      return {
+        text: result.text || "I'm here to help with your language learning journey!",
+        stickerTitle: result.stickerTitle || 'Grammar Tip'
+      };
     } catch (error) {
       console.error('Chat response failed:', error);
-      return "I'm having trouble responding right now, but I'm here to help with your language learning!";
+      return {
+        text: "I'm having trouble responding right now, but I'm here to help with your language learning!",
+        stickerTitle: 'Grammar Tip'
+      };
     }
   }
 
@@ -190,6 +212,8 @@ ${context ? `\nContext: ${context}` : ''}`,
       return [];
     }
   }
+
+
 }
 
 // Export singleton instance

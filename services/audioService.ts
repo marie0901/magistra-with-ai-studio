@@ -38,7 +38,7 @@ export class AudioService {
   private isPaused: boolean = false;
   private pausedAt: number = 0;
   private startedAt: number = 0;
-  private voiceId: string = 'Kore';
+  private voiceId: string = 'Puck';
 
   constructor() {
     this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ 
