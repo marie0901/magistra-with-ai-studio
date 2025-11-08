@@ -101,6 +101,8 @@ Provide specific feedback citing exact errors and corrections.`,
 - Use minimal words
 - No "great question" or "keep practicing" comments
 - Be factual and precise
+- Format responses as tables when possible (verb conjugations, comparisons, rules)
+- Structure content to be useful as a reference sticker
 ${context ? `\nContext: ${context}` : ''}`,
           responseMimeType: "application/json",
           responseSchema: {
