@@ -410,26 +410,17 @@ const App: React.FC = () => {
                 const { geminiService } = await import('./services/geminiService');
                 const simplifiedText = await geminiService.simplifyText(originalText, 'beginner');
                 
-                fragmentsAfterEvaluation = fragmentsAfterEvaluation.map((f, index) =>
-                    index === nextPendingIndex
-                        ? { ...f, text: simplifiedText, isSimplified: true }
-                        : f
-                );
+                // Only mark as simplified if text actually changed
+                if (simplifiedText && simplifiedText !== originalText) {
+                    fragmentsAfterEvaluation = fragmentsAfterEvaluation.map((f, index) =>
+                        index === nextPendingIndex
+                            ? { ...f, text: simplifiedText, isSimplified: true }
+                            : f
+                    );
+                }
             } catch (error) {
                 console.error('Text simplification failed:', error);
-                // Fallback to basic simplification
-                const sentences = originalText.split(/[.!?]+/);
-                const simplifiedText = sentences.length > 1 
-                    ? sentences[0].trim() + '.'
-                    : originalText.length > 50 
-                        ? originalText.substring(0, 50).trim() + '...'
-                        : originalText;
-
-                fragmentsAfterEvaluation = fragmentsAfterEvaluation.map((f, index) =>
-                    index === nextPendingIndex
-                        ? { ...f, text: simplifiedText, isSimplified: true }
-                        : f
-                );
+                // If the service fails, we will just use the original text. No fallback.
             }
         }
 

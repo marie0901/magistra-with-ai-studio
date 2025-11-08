@@ -88,9 +88,9 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
         };
     }, [popup]);
 
-    const { preSessionText, postSessionText } = useMemo(() => {
+    const { preSessionText, postSessionText, originalSentences } = useMemo(() => {
         if (learningFragments.length === 0 || !bookText) {
-            return { preSessionText: bookText, postSessionText: '' };
+            return { preSessionText: bookText, postSessionText: '', originalSentences: [] };
         }
 
         // Use the actual book text to find session boundaries
@@ -101,7 +101,7 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
 
         // Ensure IDs are within bounds of the original text sentences
         if (firstFragmentId >= originalSentences.length || lastFragmentId >= originalSentences.length) {
-            return { preSessionText: bookText, postSessionText: '' };
+            return { preSessionText: bookText, postSessionText: '', originalSentences };
         }
 
         const firstOriginalText = originalSentences[firstFragmentId];
@@ -111,7 +111,7 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
         const lastFragmentIndex = bookText.indexOf(lastOriginalText, startIndex);
 
         if (startIndex === -1 || lastFragmentIndex === -1) {
-             return { preSessionText: bookText, postSessionText: '' };
+             return { preSessionText: bookText, postSessionText: '', originalSentences };
         }
 
         const endIndex = lastFragmentIndex + lastOriginalText.length;
@@ -119,7 +119,7 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
         const pre = bookText.substring(0, startIndex);
         const post = bookText.substring(endIndex);
 
-        return { preSessionText: pre, postSessionText: post };
+        return { preSessionText: pre, postSessionText: post, originalSentences };
     }, [bookText, learningFragments]);
 
     return (
@@ -156,6 +156,7 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
                             {learningFragments.map(fragment => {
                                 const isCurrent = fragment.id === currentFragmentId;
                                 const classes = getFragmentSpanClasses(fragment.status, isCurrent);
+                                const originalText = originalSentences[fragment.id] || fragment.text;
                                 return (
                                     <span
                                         key={fragment.id}
@@ -167,7 +168,7 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
                                                 <SparklesIcon className="inline-block w-3.5 h-3.5 mr-1 text-blue-500 dark:text-blue-400" />
                                             </span>
                                         )}
-                                        {fragment.text}{' '}
+                                        {originalText}{' '}
                                     </span>
                                 );
                             })}

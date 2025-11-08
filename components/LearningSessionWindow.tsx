@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Fragment } from '../types';
 import { DraggableWindow } from './DraggableWindow';
-import { SparklesIcon, CheckCircleIcon, PlayIcon, PauseIcon, ResetIcon, BackwardIcon } from './icons';
-import { audioService } from '../services/audioService';
+import { SparklesIcon, CheckCircleIcon } from './icons';
+import { AudioPlayer } from './AudioPlayer';
 
 interface LearningSessionWindowProps {
   fragment: Fragment | undefined;
@@ -26,27 +26,12 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
     const [isLoading, setIsLoading] = useState(false);
     const [isProcessingNext, setIsProcessingNext] = useState(false);
     const [evaluation, setEvaluation] = useState<{ score: number; feedback: string; correct: string; vocabularyWords?: Array<{word: string; translation: string; context: string}> } | null>(null);
-    const [audioState, setAudioState] = useState<'idle' | 'loading' | 'playing' | 'paused'>('idle');
-    
-    // Debug logging
-    console.log('🎵 Audio State:', audioState);
-    const [audioProgress, setAudioProgress] = useState(0);
-    const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
-    const audioTimeoutRef = useRef<number | null>(null);
-    const progressIntervalRef = useRef<number | null>(null);
+
 
     useEffect(() => {
         setTranslation('');
         setEvaluation(null);
         setIsProcessingNext(false);
-        setAudioState('idle');
-        setAudioProgress(0);
-        if (audioTimeoutRef.current) {
-            clearTimeout(audioTimeoutRef.current);
-        }
-        if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-        }
     }, [fragment]);
     
     if (!fragment) {
@@ -116,116 +101,7 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
         }
     }
 
-    const startAudioProgress = (duration: number) => {
-        console.log('🎵 Starting audio progress, duration:', duration);
-        setAudioProgress(0);
-        const interval = 50; // Update every 50ms
-        const increment = 100 / (duration / interval);
-        
-        progressIntervalRef.current = window.setInterval(() => {
-            setAudioProgress(prev => {
-                const next = prev + increment;
-                if (next >= 100) {
-                    console.log('🎵 Audio progress complete, setting to paused');
-                    if (progressIntervalRef.current) {
-                        clearInterval(progressIntervalRef.current);
-                    }
-                    setAudioState('paused'); // Change to paused instead of idle
-                    return 100;
-                }
-                return next;
-            });
-        }, interval);
-    };
 
-    const stopAudioProgress = () => {
-        if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-        }
-    };
-
-    const handlePlayAudio = async () => {
-        console.log('🎵 handlePlayAudio called, current state:', audioState);
-        if (!evaluation?.correct) return;
-
-        if (audioState === 'playing') {
-            console.log('🎵 Pausing audio');
-            audioService.pauseAudio();
-            setAudioState('paused');
-            stopAudioProgress();
-            return;
-        }
-
-        if (audioState === 'paused') {
-            console.log('🎵 Resuming audio');
-            if (audioBuffer) {
-                audioService.playAudio(audioBuffer);
-                setAudioState('playing');
-                const remainingDuration = (audioBuffer.duration - (audioProgress / 100) * audioBuffer.duration) * 1000;
-                startAudioProgress(remainingDuration);
-            }
-            return;
-        }
-
-        if (audioBuffer) {
-            console.log('🎵 Playing existing buffer');
-            audioService.playAudio(audioBuffer);
-            setAudioState('playing');
-            const duration = audioBuffer.duration * 1000;
-            startAudioProgress(duration);
-        } else {
-            console.log('🎵 Generating new audio');
-            setAudioState('loading');
-            try {
-                const buffer = await audioService.generateSpeech(evaluation.correct, 'es-ES');
-                if (buffer) {
-                    console.log('🎵 Audio generated, starting playback');
-                    setAudioBuffer(buffer);
-                    audioService.playAudio(buffer);
-                    setAudioState('playing');
-                    const duration = buffer.duration * 1000;
-                    startAudioProgress(duration);
-                } else {
-                    console.log('🎵 Audio generation failed - no buffer');
-                    setAudioState('idle');
-                }
-            } catch (error) {
-                console.error('🎵 Audio generation failed:', error);
-                console.log('🎵 Using fallback TTS, setting state to playing');
-                setAudioState('playing');
-                // Simulate 5 second duration for browser TTS
-                setTimeout(() => {
-                    console.log('🎵 Fallback TTS finished, setting to paused');
-                    setAudioState('paused');
-                }, 5000);
-            }
-        }
-    };
-
-    const handleReplayAudio = () => {
-        if (!audioBuffer) return;
-        
-        if (audioTimeoutRef.current) {
-            clearTimeout(audioTimeoutRef.current);
-        }
-        stopAudioProgress();
-        
-        audioService.playAudio(audioBuffer);
-        setAudioState('playing');
-        setAudioProgress(0);
-        
-        const duration = audioBuffer.duration * 1000;
-        startAudioProgress(duration);
-    };
-
-    const handleBackwardAudio = () => {
-        console.log('🎵 Rewinding 3 seconds');
-        if (audioBuffer && audioState === 'playing') {
-            audioService.rewindAudio(3);
-            audioService.playAudio(audioBuffer); // Resume playing from new position
-            setAudioProgress(prev => Math.max(0, prev - 25)); // Roughly 3 seconds worth
-        }
-    };
 
     const handleAddVocabulary = async (vw: {word: string; translation: string; context: string}) => {
         const { StorageService } = await import('../services/storageService');
@@ -302,65 +178,9 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
                     <div className="flex justify-between items-center mb-1">
                         <p className="text-xs font-semibold text-green-800 dark:text-green-300">CORRECT TRANSLATION</p>
                         
-                        {audioState === 'idle' ? (
-                            <button 
-                                onClick={handlePlayAudio}
-                                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                            >
-                                <PlayIcon className="w-4 h-4" />
-                                Listen
-                            </button>
-                        ) : audioState === 'loading' ? (
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-                                <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-                                Loading...
-                            </div>
-                        ) : audioState === 'paused' ? (
-                            <div className="flex items-center gap-2">
-                                <button title="Rewind 3s" onClick={handleBackwardAudio} className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-                                    <BackwardIcon className="w-4 h-4" />
-                                </button>
-                                <button 
-                                    title="Resume"
-                                    onClick={handlePlayAudio}
-                                    className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                                >
-                                    <PlayIcon className="w-5 h-5" />
-                                </button>
-                                <button title="Replay" onClick={handleReplayAudio} className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-                                    <ResetIcon className="w-4 h-4" />
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2">
-                                <button title="Rewind 3s" onClick={handleBackwardAudio} className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-                                    <BackwardIcon className="w-4 h-4" />
-                                </button>
-                                <button 
-                                    title={audioState === 'playing' ? 'Pause' : 'Play'}
-                                    onClick={handlePlayAudio}
-                                    className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                                >
-                                    {audioState === 'playing' ? <PauseIcon className="w-5 h-5" /> : <PlayIcon className="w-5 h-5" />}
-                                </button>
-                                <button title="Replay" onClick={handleReplayAudio} className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-                                    <ResetIcon className="w-4 h-4" />
-                                </button>
-                            </div>
-                        )}
+                        <AudioPlayer text={evaluation.correct} language="es-ES" />
                     </div>
-                    
-                    {/* Audio Progress Bar */}
-                    {audioState === 'playing' && (
-                        <div className="mb-2">
-                            <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-1">
-                                <div 
-                                    className="bg-green-600 dark:bg-green-400 h-1 rounded-full transition-all duration-100" 
-                                    style={{ width: `${audioProgress}%` }}
-                                ></div>
-                            </div>
-                        </div>
-                    )}
+
                     
                     <p className="text-green-900 dark:text-green-200">{evaluation.correct}</p>
                 </div>

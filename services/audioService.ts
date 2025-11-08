@@ -34,6 +34,7 @@ export class AudioService {
   private audioContext: AudioContext;
   private audioBufferCache: Map<string, AudioBuffer> = new Map();
   private currentSource: AudioBufferSourceNode | null = null;
+  private currentBuffer: AudioBuffer | null = null;
   private isPaused: boolean = false;
   private pausedAt: number = 0;
   private startedAt: number = 0;
@@ -99,12 +100,17 @@ export class AudioService {
 
   playAudio(buffer: AudioBuffer): void {
     try {
-      this.stopAudio(); // Stop any current playback
+      // Don't call stopAudio() as it resets pausedAt
+      if (this.currentSource) {
+        this.currentSource.stop();
+        this.currentSource = null;
+      }
       
       if (this.audioContext.state === 'suspended') {
         this.audioContext.resume();
       }
       
+      this.currentBuffer = buffer;
       this.currentSource = this.audioContext.createBufferSource();
       this.currentSource.buffer = buffer;
       this.currentSource.connect(this.audioContext.destination);
@@ -127,23 +133,30 @@ export class AudioService {
     }
   }
 
+  resumeAudio(): void {
+    if (this.isPaused && this.currentBuffer) {
+      this.playAudio(this.currentBuffer);
+    }
+  }
+
   stopAudio(): void {
     if (this.currentSource) {
       this.currentSource.stop();
       this.currentSource = null;
     }
+    this.currentBuffer = null;
     this.isPaused = false;
     this.pausedAt = 0;
     this.startedAt = 0;
   }
 
   rewindAudio(seconds: number): void {
-    if (this.isPaused) {
-      this.pausedAt = Math.max(0, this.pausedAt - seconds);
-    } else if (this.currentSource) {
+    if (this.currentSource && !this.isPaused) {
       const currentTime = this.audioContext.currentTime - this.startedAt;
       this.pausedAt = Math.max(0, currentTime - seconds);
       this.pauseAudio();
+    } else if (this.isPaused) {
+      this.pausedAt = Math.max(0, this.pausedAt - seconds);
     }
   }
 
