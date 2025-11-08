@@ -792,7 +792,7 @@ const App: React.FC = () => {
                 </div>
             </Modal>
 
-            <Modal title="Confirm Deletion" isOpen={noteToDeleteId !== null} onClose={() => setNoteToDeleteId(null)}>
+            <Modal title="Confirm Deletion" isOpen={noteToDeleteId !== null} onClose={() => setNoteToDeleteId(null)} className="z-[500]">
                 <div className="space-y-4">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center">

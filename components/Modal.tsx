@@ -7,9 +7,10 @@ interface ModalProps {
     onClose: () => void;
     children: React.ReactNode;
     title: string;
+    className?: string;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, className }) => {
     useEffect(() => {
         const handleEsc = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
@@ -25,7 +26,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in" onClick={onClose}>
+        <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in ${className || ''}`} onClick={onClose}>
             <div 
                 className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md m-4 border border-slate-200 dark:border-slate-700 animate-slide-in-up" 
                 onClick={(e) => e.stopPropagation()}
