@@ -6,6 +6,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json yarn.lock ./
 
+# Configure yarn to use public registry
+RUN yarn config set registry https://registry.npmjs.org/
+
 # Install patch-package globally first to avoid build issues
 RUN yarn global add patch-package
 
