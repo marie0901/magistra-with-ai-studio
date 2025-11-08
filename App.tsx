@@ -30,6 +30,38 @@ const App: React.FC = () => {
     const [vocabulary, setVocabulary] = useState<VocabularyItem[]>(mockVocabulary);
     const [stickyNotes, setStickyNotes] = useState<StickyNoteData[]>(initialStickyNotes);
 
+    // Position initial sticky notes correctly
+    useEffect(() => {
+        if (appState === 'learning') {
+            const minimizedNotes = stickyNotes.filter(n => n.minimized).sort((a, b) => a.id - b.id);
+            if (minimizedNotes.length > 0) {
+                const sidebarWidth = 64;
+                const mainContentPadding = 24;
+                const minimizedNoteSize = 48;
+                const startY = 280;
+                const verticalGap = 12;
+                const desiredScreenX = (sidebarWidth - minimizedNoteSize) / 2;
+                const noteXInMain = desiredScreenX - sidebarWidth - mainContentPadding;
+
+                const updatedNotes = stickyNotes.map(note => {
+                    if (note.minimized) {
+                        const index = minimizedNotes.findIndex(n => n.id === note.id);
+                        return {
+                            ...note,
+                            position: {
+                                x: noteXInMain,
+                                y: startY + index * (minimizedNoteSize + verticalGap)
+                            },
+                            size: { width: minimizedNoteSize, height: minimizedNoteSize }
+                        };
+                    }
+                    return note;
+                });
+                setStickyNotes(updatedNotes);
+            }
+        }
+    }, [appState]);
+
     // UI State
     const [windows, setWindows] = useState<WindowState[]>([
         { id: 'book', position: { x: 0, y: 0 }, size: { width: 0, height: 0 }, zIndex: 10, minimized: false, isMaximized: false, isCollapsed: false },
@@ -483,11 +515,17 @@ const App: React.FC = () => {
     };
 
     const handleToggleMinimize = (id: number) => {
+        console.log(`🔧 App.tsx handleToggleMinimize called with id: ${id}`);
+        alert(`handleToggleMinimize called with id: ${id}`);
         const notes = [...stickyNotes];
         const targetNote = notes.find(n => n.id === id);
-        if (!targetNote) return;
+        if (!targetNote) {
+            console.log(`🔧 App.tsx targetNote not found for id: ${id}`);
+            return;
+        }
 
         const isMinimizing = !targetNote.minimized;
+        console.log(`🔧 App.tsx isMinimizing: ${isMinimizing}`);
         const newZ = noteZCounter + 1;
         setNoteZCounter(newZ);
 
@@ -525,6 +563,7 @@ const App: React.FC = () => {
             note.size = { width: minimizedNoteSize, height: minimizedNoteSize };
         });
 
+        console.log(`🔧 App.tsx setting sticky notes, minimized notes count: ${notes.filter(n => n.minimized).length}`);
         setStickyNotes(notes);
     };
 

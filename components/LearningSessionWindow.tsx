@@ -8,7 +8,7 @@ interface LearningSessionWindowProps {
   fragment: Fragment | undefined;
   fragmentIndex: number;
   totalFragmentsInSession: number;
-  onNextFragment: (score: number) => void;
+  onNextFragment: (score: number) => Promise<void>;
   targetLanguage: string;
   initialPosition: { x: number; y: number };
   initialSize: { width: number | string; height: number | string };
@@ -23,6 +23,7 @@ interface LearningSessionWindowProps {
 export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fragment, fragmentIndex, totalFragmentsInSession, onNextFragment, targetLanguage, isMaximized, onMaximizeToggle, onReset, onCollapse, ...windowProps }) => {
     const [translation, setTranslation] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isProcessingNext, setIsProcessingNext] = useState(false);
     const [evaluation, setEvaluation] = useState<{ score: number; feedback: string; correct: string } | null>(null);
     const [audioState, setAudioState] = useState<'idle' | 'loading' | 'playing' | 'paused'>('idle');
     
@@ -36,6 +37,7 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
     useEffect(() => {
         setTranslation('');
         setEvaluation(null);
+        setIsProcessingNext(false);
         setAudioState('idle');
         setAudioProgress(0);
         if (audioTimeoutRef.current) {
@@ -88,9 +90,14 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
         setIsLoading(false);
     };
     
-    const handleNext = () => {
+    const handleNext = async () => {
         if (evaluation) {
-            onNextFragment(evaluation.score);
+            setIsProcessingNext(true);
+            try {
+                await onNextFragment(evaluation.score);
+            } finally {
+                setIsProcessingNext(false);
+            }
         }
     }
 
@@ -326,8 +333,17 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
 
         <div className="pt-2">
           {evaluation ? (
-             <button onClick={handleNext} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-                <CheckCircleIcon /> Next Fragment
+             <button onClick={handleNext} disabled={isProcessingNext} className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-400 dark:disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed">
+                {isProcessingNext ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircleIcon /> Next Fragment
+                  </>
+                )}
              </button>
           ) : (
              <button onClick={handleCheck} disabled={!translation || isLoading} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 dark:disabled:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed">

@@ -12,6 +12,7 @@ interface StickyNoteProps {
 }
 
 export const StickyNote: React.FC<StickyNoteProps> = ({ note, onUpdate, onDeleteRequest, onFocus, onToggleMinimize }) => {
+    console.log(`🔧 StickyNote component rendered for note ${note.id}, onToggleMinimize:`, typeof onToggleMinimize, onToggleMinimize);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [isEditingContent, setIsEditingContent] = useState(false);
     const [title, setTitle] = useState(note.title);
@@ -164,10 +165,17 @@ export const StickyNote: React.FC<StickyNoteProps> = ({ note, onUpdate, onDelete
                     </h3>
                 )}
                 <div className="flex items-center">
-                    <button onClick={() => onToggleMinimize(note.id)} className="p-1 rounded-full hover:bg-black/10 text-yellow-800 dark:text-yellow-200">
+                    <button onClick={(e) => { 
+                        console.log(`🔧 StickyNote minimize button clicked for note ${note.id}`);
+                        console.log(`🔧 StickyNote onToggleMinimize callback:`, onToggleMinimize);
+                        e.stopPropagation(); 
+                        console.log(`🔧 StickyNote calling onToggleMinimize(${note.id})`);
+                        onToggleMinimize(note.id);
+                        console.log(`🔧 StickyNote onToggleMinimize call completed`);
+                    }} onMouseDown={(e) => { console.log(`🔧 StickyNote minimize button mousedown for note ${note.id}`); e.stopPropagation(); }} className="p-1 rounded-full hover:bg-black/10 text-yellow-800 dark:text-yellow-200">
                         <MinimizeIcon className="w-4 h-4" />
                     </button>
-                    <button onClick={() => onDeleteRequest(note.id)} className="p-1 rounded-full hover:bg-black/10 text-yellow-800 dark:text-yellow-200">
+                    <button onClick={(e) => { e.stopPropagation(); onDeleteRequest(note.id); }} onMouseDown={(e) => e.stopPropagation()} className="p-1 rounded-full hover:bg-black/10 text-yellow-800 dark:text-yellow-200">
                         <CloseIcon className="w-4 h-4" />
                     </button>
                 </div>
