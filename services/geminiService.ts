@@ -13,6 +13,7 @@ export class GeminiService {
     score: number;
     feedback: string;
     corrections?: string;
+    vocabularyWords?: Array<{word: string; translation: string; context: string}>;
   }> {
     try {
       const response = await ai.models.generateContent({
@@ -20,18 +21,41 @@ export class GeminiService {
         contents: `Source Text: "${original}"
 User's Translation: "${translation}"`,
         config: {
-          systemInstruction: `You are an expert language tutor. Evaluate the user's translation of a text into ${targetLang}. Provide a score from 0 to 100 on the accuracy, grammar, and fluency of the user's translation. Also, provide brief, constructive, and encouraging feedback in one or two sentences, explaining any key errors and how to improve.`,
+          systemInstruction: `You are an expert ${targetLang} language tutor. Evaluate the user's translation with detailed analysis:
+
+1. Score (0-100): Rate accuracy, grammar, and fluency
+2. Feedback: Provide specific, constructive feedback explaining errors and improvements
+3. Corrections: If score < 90, provide the corrected translation
+4. Vocabulary: Extract 2-3 challenging words from the original text with ${targetLang} translations
+
+Be encouraging but precise in your assessment.`,
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
             properties: {
               score: {
                 type: Type.NUMBER,
-                description: 'A score from 0 to 100 for the translation.'
+                description: 'Score from 0 to 100 for the translation quality'
               },
               feedback: {
                 type: Type.STRING,
-                description: 'Constructive feedback for the user in 1-2 sentences.'
+                description: 'Detailed constructive feedback with specific improvements'
+              },
+              corrections: {
+                type: Type.STRING,
+                description: 'Corrected translation if score < 90, otherwise empty'
+              },
+              vocabularyWords: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    word: { type: Type.STRING, description: 'English word' },
+                    translation: { type: Type.STRING, description: `${targetLang} translation` },
+                    context: { type: Type.STRING, description: 'Brief context or usage note' }
+                  }
+                },
+                description: '2-3 challenging vocabulary words from the text'
               }
             }
           }
@@ -42,6 +66,8 @@ User's Translation: "${translation}"`,
       return {
         score: result.score || 50,
         feedback: result.feedback || 'Good effort! Keep practicing.',
+        corrections: result.corrections,
+        vocabularyWords: result.vocabularyWords || []
       };
     } catch (error) {
       console.error('Translation evaluation failed:', error);
@@ -88,6 +114,41 @@ ${context ? `\nContext: ${context}` : ''}`,
     } catch (error) {
       console.error('Text simplification failed:', error);
       return text;
+    }
+  }
+
+  async extractVocabulary(text: string, targetLang: string): Promise<Array<{word: string; translation: string; context: string}>> {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Text: "${text}"`,
+        config: {
+          systemInstruction: `Extract 3-5 challenging vocabulary words from this text for a ${targetLang} language learner. For each word, provide the ${targetLang} translation and a brief context note.`,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              words: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    word: { type: Type.STRING },
+                    translation: { type: Type.STRING },
+                    context: { type: Type.STRING }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      const result = JSON.parse(response.text.trim());
+      return result.words || [];
+    } catch (error) {
+      console.error('Vocabulary extraction failed:', error);
+      return [];
     }
   }
 }

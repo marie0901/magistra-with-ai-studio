@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Theme, LayoutSchema } from '../types';
-import { SunIcon, MoonIcon, UserIcon, LayoutDefaultIcon, LayoutFocusIcon, LayoutReadingIcon, LayoutCompactIcon, ChevronDownIcon } from './icons';
+import { SunIcon, MoonIcon, UserIcon, LayoutDefaultIcon, LayoutFocusIcon, LayoutReadingIcon, LayoutCompactIcon, ChevronDownIcon, CogIcon } from './icons';
 
 interface HeaderProps {
   theme: Theme;
   toggleTheme: () => void;
   layout: LayoutSchema;
   setLayout: (layout: LayoutSchema) => void;
+  onOpenSettings?: () => void;
 }
 
 const layoutOptions: { id: LayoutSchema; name: string; icon: React.ReactNode }[] = [
@@ -16,7 +17,7 @@ const layoutOptions: { id: LayoutSchema; name: string; icon: React.ReactNode }[]
     { id: 'compact', name: 'Compact (Ctrl+4)', icon: <LayoutCompactIcon /> },
 ];
 
-export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme, layout, setLayout }) => {
+export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme, layout, setLayout, onOpenSettings }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -62,6 +63,15 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme, layout, setL
                     )}
                 </div>
                 
+                {onOpenSettings && (
+                    <button
+                        onClick={onOpenSettings}
+                        className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                        title="Settings"
+                    >
+                        <CogIcon className="w-5 h-5" />
+                    </button>
+                )}
                 <button
                     onClick={toggleTheme}
                     className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"

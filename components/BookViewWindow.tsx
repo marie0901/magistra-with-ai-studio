@@ -93,9 +93,8 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
             return { preSessionText: bookText, postSessionText: '' };
         }
 
-        // Always use the original text from constants to find session boundaries.
-        // This is robust against in-session text simplifications.
-        const originalSentences = userProvidedText.trim().split(/(?<=[.?!])\s+/);
+        // Use the actual book text to find session boundaries
+        const originalSentences = bookText.trim().split(/(?<=[.?!])\s+/);
         
         const firstFragmentId = learningFragments[0].id;
         const lastFragmentId = learningFragments[learningFragments.length - 1].id;
@@ -109,8 +108,6 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
         const lastOriginalText = originalSentences[lastFragmentId];
 
         const startIndex = bookText.indexOf(firstOriginalText);
-        
-        // Search for the last fragment starting from the position of the first one to handle duplicate sentences.
         const lastFragmentIndex = bookText.indexOf(lastOriginalText, startIndex);
 
         if (startIndex === -1 || lastFragmentIndex === -1) {

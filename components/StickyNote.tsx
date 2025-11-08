@@ -2,6 +2,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import type { StickyNoteData } from '../types';
 import { CloseIcon, MinimizeIcon } from './icons';
+import { parseMarkdown } from '../utils/markdown';
 
 interface StickyNoteProps {
     note: StickyNoteData;
@@ -190,7 +191,7 @@ export const StickyNote: React.FC<StickyNoteProps> = ({ note, onUpdate, onDelete
                         className="w-full h-full bg-transparent outline-none resize-none"
                     />
                 ) : (
-                    <p className="whitespace-pre-wrap">{note.content}</p>
+                    <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: parseMarkdown(note.content) }} />
                 )}
             </div>
              <div 

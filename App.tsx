@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Theme, LayoutSchema, Fragment, ChatMessage, VocabularyItem, StickyNoteData, WindowState } from './types';
-import { userProvidedText, mockChatHistory, mockVocabulary, initialStickyNotes, SESSION_FRAGMENT_COUNT, mockCorrectTranslations } from './constants';
+import { userProvidedText, mockChatHistory, mockVocabulary, initialStickyNotes, DEFAULT_SESSION_FRAGMENT_COUNT, mockCorrectTranslations } from './constants';
+import { StorageService } from './services/storageService';
 import { Header } from './components/Header';
 import { BookViewWindow } from './components/BookViewWindow';
 import { LearningSessionWindow } from './components/LearningSessionWindow';
@@ -14,6 +15,7 @@ import { CheckCircleIcon, TrashIcon, BookTextIcon, GraduationCapIcon, SparklesIc
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { TextInputScreen } from './components/TextInputScreen';
 import { PasteTextScreen } from './components/PasteTextScreen';
+import { SettingsModal } from './components/SettingsModal';
 
 const App: React.FC = () => {
     // Global State
@@ -27,8 +29,18 @@ const App: React.FC = () => {
     const [learningFragments, setLearningFragments] = useState<Fragment[]>([]);
     const [sessionOffset, setSessionOffset] = useState(0);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>(mockChatHistory);
-    const [vocabulary, setVocabulary] = useState<VocabularyItem[]>(mockVocabulary);
+    const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
     const [stickyNotes, setStickyNotes] = useState<StickyNoteData[]>(initialStickyNotes);
+    const [customText, setCustomText] = useState<string>('');
+    const [settings, setSettings] = useState({ voiceId: 'Kore', fragmentCount: DEFAULT_SESSION_FRAGMENT_COUNT });
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // Update audio service when voice changes
+    useEffect(() => {
+        import('./services/audioService').then(({ audioService }) => {
+            audioService.setVoice(settings.voiceId);
+        });
+    }, [settings.voiceId]);
 
     // Position initial sticky notes correctly
     useEffect(() => {
@@ -77,6 +89,27 @@ const App: React.FC = () => {
     const [noteToDeleteId, setNoteToDeleteId] = useState<number | null>(null);
     const [pendingSessionOffset, setPendingSessionOffset] = useState<number | null>(null);
     
+    // Load saved progress on mount
+    useEffect(() => {
+        const savedProgress = StorageService.loadProgress();
+        const savedVocabulary = StorageService.loadVocabulary();
+        
+        if (savedVocabulary.length > 0) {
+            setVocabulary(savedVocabulary);
+        } else {
+            setVocabulary(mockVocabulary);
+        }
+        
+        if (savedProgress) {
+            setSessionOffset(savedProgress.sessionOffset || 0);
+            setTargetLanguage(savedProgress.targetLanguage || 'Spanish');
+            if (savedProgress.bookText) {
+                setBookText(savedProgress.bookText);
+                setCustomText(savedProgress.bookText);
+            }
+        }
+    }, []);
+    
     // Theme Management
     useEffect(() => {
         if (theme === 'dark') {
@@ -90,8 +123,9 @@ const App: React.FC = () => {
 
     // Session Generation
     const generateLearningSession = useCallback((offset: number) => {
-        const sentences = userProvidedText.trim().split(/(?<=[.?!])\s+/);
-        const sessionSentences = sentences.slice(offset, offset + SESSION_FRAGMENT_COUNT);
+        const textToUse = customText || bookText;
+        const sentences = textToUse.trim().split(/(?<=[.?!])\s+/);
+        const sessionSentences = sentences.slice(offset, offset + settings.fragmentCount);
 
         if (sessionSentences.length === 0) {
             setLearningFragments([]);
@@ -105,11 +139,18 @@ const App: React.FC = () => {
             status: 'pending',
         }));
         
-        setBookText(userProvidedText);
         setLearningFragments(newFragments);
         setCurrentFragmentId(null);
+        
+        // Save progress
+        StorageService.saveProgress({
+            sessionOffset: offset,
+            learningFragments: newFragments,
+            targetLanguage,
+            bookText: textToUse
+        });
 
-    }, []);
+    }, [customText, bookText, targetLanguage]);
 
     // Effect to handle session preparation and reliably open the modal
     useEffect(() => {
@@ -377,10 +418,12 @@ const App: React.FC = () => {
             } catch (error) {
                 console.error('Text simplification failed:', error);
                 // Fallback to basic simplification
-                const splitPoint = originalText.indexOf(',');
-                const simplifiedText = splitPoint > 0
-                    ? originalText.substring(0, splitPoint) + '.'
-                    : originalText.substring(0, Math.floor(originalText.length * 0.7)) + '...';
+                const sentences = originalText.split(/[.!?]+/);
+                const simplifiedText = sentences.length > 1 
+                    ? sentences[0].trim() + '.'
+                    : originalText.length > 50 
+                        ? originalText.substring(0, 50).trim() + '...'
+                        : originalText;
 
                 fragmentsAfterEvaluation = fragmentsAfterEvaluation.map((f, index) =>
                     index === nextPendingIndex
@@ -412,19 +455,27 @@ const App: React.FC = () => {
             setLearningFragments(fragmentsAfterEvaluation); // Save final state of completed fragments
             setCurrentFragmentId(null);
             setIsCompletionModalOpen(true);
+            
+            // Save completion progress
+            StorageService.saveProgress({
+                sessionOffset,
+                learningFragments: fragmentsAfterEvaluation,
+                currentFragmentId: null
+            });
         }
     };
 
     const handleNewSession = () => {
         setIsCompletionModalOpen(false);
         setCompletedSessionTranslation(null);
-        const newOffset = sessionOffset + SESSION_FRAGMENT_COUNT;
+        const newOffset = sessionOffset + settings.fragmentCount;
         setSessionOffset(newOffset);
         setPendingSessionOffset(newOffset);
     };
 
     const handleStartSessionFromText = (selectedText: string) => {
-        const fullText = bookText.trim();
+        const textToUse = customText || bookText;
+        const fullText = textToUse.trim();
         const firstSelectedSentence = selectedText.trim().split(/(?<=[.?!])\s+/)[0];
         const selectionStartIndex = fullText.indexOf(firstSelectedSentence);
 
@@ -451,22 +502,36 @@ const App: React.FC = () => {
         setPendingSessionOffset(newOffset);
     };
 
+    const handleVocabularyUpdate = (newWords: Array<{word: string; translation: string; context: string}>) => {
+        const vocabItems = newWords.map(vw => ({
+            original: vw.word,
+            translation: vw.translation,
+            context: vw.context,
+            addedFrom: `Fragment ${currentFragmentIndex + 1}`
+        }));
+        setVocabulary(prev => {
+            const existing = prev.map(v => v.original);
+            const newItems = vocabItems.filter(item => !existing.includes(item.original));
+            return [...prev, ...newItems];
+        });
+    };
+
+    const handleDeleteVocabulary = async (word: string) => {
+        setVocabulary(prev => prev.filter(item => item.original !== word));
+        const { StorageService } = await import('./services/storageService');
+        const updatedVocabulary = vocabulary.filter(item => item.original !== word);
+        StorageService.saveVocabulary(updatedVocabulary);
+    };
+
     const handleSendMessage = async (message: string) => {
         const newUserMessage: ChatMessage = { sender: 'user', text: message };
         setChatHistory(prev => [...prev, newUserMessage]);
-
-        console.log('🤖 Starting chat request for message:', message);
         
         try {
-            console.log('🤖 Importing geminiService...');
             const { geminiService } = await import('./services/geminiService');
-            console.log('🤖 GeminiService imported successfully');
-            
-            const context = `User is learning ${targetLanguage}. Current session has ${learningFragments.length} fragments.`;
-            console.log('🤖 Calling geminiService.chatResponse with context:', context);
+            const context = `User is learning ${targetLanguage}. Current session has ${learningFragments.length} fragments. Current vocabulary: ${vocabulary.length} words.`;
             
             const aiResponse = await geminiService.chatResponse(message, context);
-            console.log('🤖 Received AI response:', aiResponse);
             
             const responseMessage: ChatMessage = {
                 sender: 'ai',
@@ -474,11 +539,22 @@ const App: React.FC = () => {
             };
             setChatHistory(prev => [...prev, responseMessage]);
         } catch (error) {
-            console.error('🤖 Chat error details:', error);
-            console.error('🤖 Error stack:', error.stack);
+            console.error('Chat error:', error);
+            let errorMessage = "I'm having trouble connecting right now, but I'm here to help with your language learning!";
+            
+            if (error instanceof Error) {
+                if (error.message.includes('API_KEY')) {
+                    errorMessage = "API key not configured. Please check your environment settings.";
+                } else if (error.message.includes('rate limit')) {
+                    errorMessage = "I'm getting too many requests right now. Please wait a moment and try again.";
+                } else if (error.message.includes('network')) {
+                    errorMessage = "Network connection issue. Please check your internet connection.";
+                }
+            }
+            
             const fallbackResponse: ChatMessage = {
                 sender: 'ai',
-                text: "I'm having trouble connecting right now, but I'm here to help with your language learning!"
+                text: errorMessage
             };
             setChatHistory(prev => [...prev, fallbackResponse]);
         }
@@ -515,8 +591,6 @@ const App: React.FC = () => {
     };
 
     const handleToggleMinimize = (id: number) => {
-        console.log(`🔧 App.tsx handleToggleMinimize called with id: ${id}`);
-        alert(`handleToggleMinimize called with id: ${id}`);
         const notes = [...stickyNotes];
         const targetNote = notes.find(n => n.id === id);
         if (!targetNote) {
@@ -595,8 +669,10 @@ const App: React.FC = () => {
     if (appState === 'paste_text') {
         return <PasteTextScreen 
             onStartLearning={(text) => {
-                // In a future implementation, you would setBookText(text) here.
-                // For now, we proceed with the sample text as requested.
+                if (text.trim()) {
+                    setCustomText(text.trim());
+                    setBookText(text.trim());
+                }
                 handleStartInitialSession();
             }}
             targetLanguage={targetLanguage}
@@ -606,7 +682,7 @@ const App: React.FC = () => {
 
     return (
         <div className={`h-screen w-screen overflow-hidden bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-50 flex flex-col transition-colors duration-300`}>
-            <Header theme={theme} toggleTheme={toggleTheme} layout={layout} setLayout={handleSetLayout} />
+            <Header theme={theme} toggleTheme={toggleTheme} layout={layout} setLayout={handleSetLayout} onOpenSettings={() => setIsSettingsOpen(true)} />
             <div className="flex-grow flex relative">
                 <div className="fixed top-0 left-0 h-full w-16 bg-slate-900/10 dark:bg-slate-800/20 backdrop-blur-sm z-[198] flex flex-col items-center pt-24 space-y-2">
                     {sidebarItems.map(item => {
@@ -629,7 +705,7 @@ const App: React.FC = () => {
 
                 <main className="flex-grow p-6 relative">
                      {getWindow('book') && !getWindow('book')!.isCollapsed && (!maximizedWindow || maximizedWindow.id === 'book') && <BookViewWindow 
-                        bookText={bookText}
+                        bookText={customText || bookText}
                         learningFragments={learningFragments}
                         currentFragmentId={currentFragmentId}
                         onStartNewSession={handleStartSessionFromText}
@@ -647,6 +723,7 @@ const App: React.FC = () => {
                         fragmentIndex={currentFragmentIndex}
                         totalFragmentsInSession={learningFragments.length}
                         onNextFragment={handleNextFragment}
+                        onVocabularyUpdate={handleVocabularyUpdate}
                         targetLanguage={targetLanguage}
                         initialPosition={getWindow('learning')!.position}
                         initialSize={getWindow('learning')!.size}
@@ -662,6 +739,7 @@ const App: React.FC = () => {
                         vocabulary={vocabulary}
                         onSendMessage={handleSendMessage}
                         onCreateSticker={handleCreateSticker}
+                        onDeleteVocabulary={handleDeleteVocabulary}
                         initialPosition={getWindow('ai')!.position}
                         initialSize={getWindow('ai')!.size}
                         zIndex={getWindow('ai')!.zIndex}
@@ -743,6 +821,13 @@ const App: React.FC = () => {
                     </div>
                 </div>
             </Modal>
+
+            <SettingsModal 
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                settings={settings}
+                onSave={setSettings}
+            />
 
         </div>
     );

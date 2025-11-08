@@ -9,6 +9,7 @@ interface LearningSessionWindowProps {
   fragmentIndex: number;
   totalFragmentsInSession: number;
   onNextFragment: (score: number) => Promise<void>;
+  onVocabularyUpdate: (newWords: Array<{word: string; translation: string; context: string}>) => void;
   targetLanguage: string;
   initialPosition: { x: number; y: number };
   initialSize: { width: number | string; height: number | string };
@@ -20,11 +21,11 @@ interface LearningSessionWindowProps {
   onCollapse: () => void;
 }
 
-export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fragment, fragmentIndex, totalFragmentsInSession, onNextFragment, targetLanguage, isMaximized, onMaximizeToggle, onReset, onCollapse, ...windowProps }) => {
+export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fragment, fragmentIndex, totalFragmentsInSession, onNextFragment, onVocabularyUpdate, targetLanguage, isMaximized, onMaximizeToggle, onReset, onCollapse, ...windowProps }) => {
     const [translation, setTranslation] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isProcessingNext, setIsProcessingNext] = useState(false);
-    const [evaluation, setEvaluation] = useState<{ score: number; feedback: string; correct: string } | null>(null);
+    const [evaluation, setEvaluation] = useState<{ score: number; feedback: string; correct: string; vocabularyWords?: Array<{word: string; translation: string; context: string}> } | null>(null);
     const [audioState, setAudioState] = useState<'idle' | 'loading' | 'playing' | 'paused'>('idle');
     
     // Debug logging
@@ -73,17 +74,31 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
             setEvaluation({
                 score: result.score,
                 feedback: result.feedback,
-                correct: result.corrections || translation
+                correct: result.corrections || translation,
+                vocabularyWords: result.vocabularyWords
             });
+            
+            // Vocabulary words are now shown for user to optionally add
+            // No automatic addition to dictionary
         } catch (error) {
             console.error('Translation evaluation failed:', error);
-            // Fallback to mock evaluation
-            const score = Math.floor(Math.random() * 71) + 30;
+            let errorFeedback = "Unable to evaluate translation right now. Keep practicing!";
+            
+            if (error instanceof Error) {
+                if (error.message.includes('API_KEY')) {
+                    errorFeedback = "API key not configured. Using offline evaluation.";
+                } else if (error.message.includes('rate limit')) {
+                    errorFeedback = "Too many requests. Please wait a moment before trying again.";
+                }
+            }
+            
+            // Fallback evaluation based on length and basic checks
+            const hasBasicStructure = translation.length > fragment.text.length * 0.5;
+            const score = hasBasicStructure ? 65 : 45;
+            
             setEvaluation({
                 score,
-                feedback: score < 60 
-                    ? "This translation could be improved. Let's try a simpler sentence next." 
-                    : "Good attempt! Keep practicing to improve further.",
+                feedback: errorFeedback,
                 correct: translation
             });
         }
@@ -212,6 +227,30 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
         }
     };
 
+    const handleAddVocabulary = async (vw: {word: string; translation: string; context: string}) => {
+        const { StorageService } = await import('../services/storageService');
+        const vocabItem = {
+            original: vw.word,
+            translation: vw.translation,
+            context: vw.context,
+            addedFrom: `Fragment ${fragmentIndex + 1}`
+        };
+        StorageService.addVocabularyWords([vocabItem]);
+        onVocabularyUpdate([vw]);
+    };
+
+    const handleAddAllVocabulary = async (words: Array<{word: string; translation: string; context: string}>) => {
+        const { StorageService } = await import('../services/storageService');
+        const vocabItems = words.map(vw => ({
+            original: vw.word,
+            translation: vw.translation,
+            context: vw.context,
+            addedFrom: `Fragment ${fragmentIndex + 1}`
+        }));
+        StorageService.addVocabularyWords(vocabItems);
+        onVocabularyUpdate(words);
+    };
+
     const getScoreColor = (score: number) => {
         if (score >= 80) return 'bg-green-400 text-green-900';
         if (score >= 60) return 'bg-yellow-400 text-yellow-900';
@@ -325,9 +364,35 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
                     
                     <p className="text-green-900 dark:text-green-200">{evaluation.correct}</p>
                 </div>
-                 <button className="text-xs mt-2 text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
-                    <SparklesIcon/> Add 'resistido' to Vocabulary
-                </button>
+                 {evaluation.vocabularyWords && evaluation.vocabularyWords.length > 0 && (
+                    <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/30 rounded-md">
+                        <div className="flex justify-between items-center mb-2">
+                            <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">NEW VOCABULARY</p>
+                            <button 
+                                onClick={() => handleAddAllVocabulary(evaluation.vocabularyWords!)}
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                            >
+                                Add All
+                            </button>
+                        </div>
+                        <div className="space-y-1">
+                            {evaluation.vocabularyWords.map((vw, idx) => (
+                                <div key={idx} className="group flex items-center justify-between text-xs text-blue-700 dark:text-blue-300">
+                                    <div>
+                                        <span className="font-semibold">{vw.word}</span> → {vw.translation}
+                                        {vw.context && <span className="text-blue-600 dark:text-blue-400 ml-1">({vw.context})</span>}
+                                    </div>
+                                    <button 
+                                        onClick={() => handleAddVocabulary(vw)}
+                                        className="opacity-0 group-hover:opacity-100 text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 ml-2 transition-opacity"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                 )}
             </div>
         )}
 

@@ -1,7 +1,7 @@
 
 import type { VocabularyItem, ChatMessage, StickyNoteData } from './types';
 
-export const SESSION_FRAGMENT_COUNT = 3;
+export const DEFAULT_SESSION_FRAGMENT_COUNT = 3;
 
 export const userProvidedText = `
 In the heart of the sprawling city of Eldoria, where magic and machinery coexisted in a delicate, often chaotic, balance, lived a young inventor named Elara. Her workshop was a testament to her genius and her eccentricity—a cluttered space filled with half-finished automatons, blueprints for flying machines sketched on napkins, and jars containing captured starlight. Elara wasn't just any inventor; she was a student of the forgotten arts, blending ancient runic magic with cutting-edge clockwork technology.

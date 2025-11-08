@@ -37,11 +37,16 @@ export class AudioService {
   private isPaused: boolean = false;
   private pausedAt: number = 0;
   private startedAt: number = 0;
+  private voiceId: string = 'Kore';
 
   constructor() {
     this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ 
       sampleRate: 24000 
     });
+  }
+
+  setVoice(voiceId: string): void {
+    this.voiceId = voiceId;
   }
 
   async generateSpeech(text: string, language: string = 'en-US'): Promise<AudioBuffer | null> {
@@ -68,7 +73,7 @@ export class AudioService {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Kore' },
+              prebuiltVoiceConfig: { voiceName: this.voiceId || 'Kore' },
             },
           },
         },
