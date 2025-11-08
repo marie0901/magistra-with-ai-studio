@@ -4,7 +4,10 @@ FROM node:20-alpine as build
 WORKDIR /app
 
 # Copy package files
-COPY package*.json yarn.lock ./
+COPY package*.json ./
+
+# Remove any existing registry configurations and lock files
+RUN rm -f .yarnrc .npmrc yarn.lock package-lock.json
 
 # Configure yarn to use public registry
 RUN yarn config set registry https://registry.npmjs.org/
