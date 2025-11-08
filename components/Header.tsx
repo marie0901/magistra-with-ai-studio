@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme, layout, setL
 
     return (
         <header className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 p-3 px-6 flex justify-between items-center sticky top-0 z-[300]">
-            <h1 className="text-xl font-bold text-slate-800 dark:text-white">Magistra UI</h1>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-white">VerbaMagistra</h1>
             <div className="flex items-center gap-4">
                 <div className="relative" ref={dropdownRef}>
                     <button 
