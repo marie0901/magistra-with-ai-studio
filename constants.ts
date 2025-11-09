@@ -4,21 +4,21 @@ import type { VocabularyItem, ChatMessage, StickyNoteData } from './types';
 export const DEFAULT_SESSION_FRAGMENT_COUNT = 3;
 
 export const userProvidedText = `
-In the heart of the sprawling city of Eldoria, where magic and machinery coexisted in a delicate, often chaotic, balance, lived a young inventor named Elara. Her workshop was a testament to her genius and her eccentricity—a cluttered space filled with half-finished automatons, blueprints for flying machines sketched on napkins, and jars containing captured starlight. Elara wasn't just any inventor; she was a student of the forgotten arts, blending ancient runic magic with cutting-edge clockwork technology.
+In the brownstone on West Thirty-fifth Street, Inspector Marcus Blackwood sat behind his mahogany desk, methodically examining the evidence from the Pemberton case. His assistant, Detective Sarah Chen, entered the study carrying a silver tray with afternoon tea and a collection of witness statements. Blackwood was not just any inspector; he was a master of deductive reasoning, combining classical investigative techniques with modern forensic analysis.
 
-One evening, while tinkering with a device designed to translate the whispers of the wind, she intercepted a fragmented message. It spoke of the Sunstone, a legendary artifact said to hold the power of a star, hidden deep within the Crystal Mountains. The message was a cry for help from a neighboring kingdom, whose lands were slowly being consumed by a creeping, unnatural winter. The Sunstone, the message claimed, was their only hope.
+That morning, while reviewing files from unsolved cases, he had received an urgent telephone call. It concerned the Crimson Diamond, a priceless ruby said to possess an unusual history, stolen from the Metropolitan Museum during a charity gala. The caller was a representative from the insurance company, whose client faced financial ruin if the gem remained missing. The Crimson Diamond, according to the caller, was their only hope for recovery.
 
-Driven by a sense of adventure she inherited from her explorer grandmother, Elara knew she had to act. She packed her satchel with enchanted tools, a self-heating blanket, and enough food for a week. Her most trusted companion, a small clockwork bird named Gizmo, perched on her shoulder, its metallic feathers whirring softly. Gizmo was more than a pet; its crystal eyes could see magical auras, and its tiny gears could decipher complex codes.
+Driven by his reputation for solving impossible cases, Blackwood knew he had to investigate. He instructed Chen to gather the necessary equipment: fingerprint powder, magnifying glasses, and detailed floor plans of the museum. His most reliable informant, a small-time art dealer named Vincent, had already provided crucial intelligence about suspicious activities in the art underworld. Vincent was more than a contact; his connections reached deep into the criminal networks, and his sharp eye could spot forgeries that fooled even experts.
 
-Their journey began at the city's edge, leaving the familiar hum of Eldoria for the untamed wilderness. The path to the Crystal Mountains was treacherous, winding through whispering forests where the trees were said to remember the dawn of time, and across roaring rivers that carved canyons through the land. Elara used her inventions to navigate the challenges. A pair of boots fitted with miniature gyroscopes allowed her to walk across the most unstable terrain, while a compass attuned to the planet's magical ley lines always pointed them in the right direction.
+Their investigation began at the museum's main entrance, leaving the familiar comfort of the brownstone for the bustling cultural district. The path to solving the case was complex, winding through interviews with wealthy patrons who attended the gala, and examining security footage that captured shadows moving through dimly lit corridors. Blackwood used his analytical methods to piece together the timeline. A set of lockpicks found near the display case allowed him to understand the thief's approach, while a notebook containing detailed museum layouts always pointed them toward the most likely escape routes.
 
-During their travels, they encountered a stoic mountain guardian named Kael, a man whose lineage had protected the paths to the mountains for centuries. He was skeptical of outsiders, but upon seeing the sincerity in Elara's eyes and the urgency of her quest, he agreed to guide them. Kael spoke of the trials that protected the Sunstone—riddles posed by ancient spirits and illusions designed to mislead the unworthy.
+During their inquiries, they encountered a mysterious art collector named Helena Voss, a woman whose private collection had grown substantially over recent years. She was suspicious of investigators, but upon recognizing Blackwood's reputation and the urgency of the case, she agreed to cooperate. Helena spoke of the security measures protecting valuable artifacts—sophisticated alarms installed by master craftsmen and decoy pieces designed to mislead amateur thieves.
 
-Together, the trio faced the trials. Elara's sharp mind, Kael's deep knowledge of the mountains, and Gizmo's unique senses proved to be a formidable combination. They solved the spirit's riddle, navigated the labyrinth of shifting mirrors, and finally arrived at a vast cavern, its ceiling glittering with giant crystals. In the center, resting on a pedestal of pure obsidian, was the Sunstone. It pulsed with a warm, gentle light, bathing the entire cavern in a golden glow, a beacon of hope against the encroaching cold.
+Together, the team pursued every lead. Blackwood's methodical approach, Chen's technical expertise, and Vincent's street knowledge proved to be an effective combination. They analyzed the security footage, traced the lockpicks to their manufacturer, and finally discovered a hidden passage behind the museum's main gallery. In a secret room, concealed behind a false wall, was the Crimson Diamond. It gleamed with deep red fire, casting reflections across the hidden chamber, a testament to both the thief's cunning and the investigators' persistence.
 `;
 
 export const mockCorrectTranslations: string[] = [
-  "En el corazón de la extensa ciudad de Eldoria, donde la magia y la maquinaria coexistían en un delicado, a menudo caótico, equilibrio, vivía una joven inventora llamada Elara.",
+  "En la casa de piedra rojiza de la calle Treinta y cinco Oeste, el Inspector Marcus Blackwood se sentó detrás de su escritorio de caoba, examinando metódicamente la evidencia del caso Pemberton.",
   "Su taller era un testimonio de su genio y su excentricidad: un espacio desordenado lleno de autómatas a medio terminar, planos de máquinas voladoras esbozados en servilletas y frascos que contenían luz estelar capturada.",
   "Elara no era una inventora cualquiera; era una estudiante de las artes olvidadas, que mezclaba la antigua magia rúnica con la tecnología de relojería de vanguardia.",
   "Una tarde, mientras jugueteaba con un dispositivo diseñado para traducir los susurros del viento, interceptó un mensaje fragmentado.",
@@ -45,17 +45,16 @@ export const mockCorrectTranslations: string[] = [
 
 
 export const mockVocabulary: VocabularyItem[] = [
-  { original: "ancient", translation: "antiguo", context: "The ancient castle stood...", addedFrom: "Fragment 1" },
-  { original: "weathered", translation: "resistido", context: "walls had weathered storms...", addedFrom: "Fragment 2" },
-  { original: "tapestries", translation: "tapices", context: "tapestries told stories...", addedFrom: "AI Assistant" }
+  { original: "methodically", translation: "metódicamente", context: "examining the evidence methodically...", addedFrom: "Fragment 1" },
+  { original: "deductive", translation: "deductivo", context: "master of deductive reasoning...", addedFrom: "Fragment 2" },
+  { original: "forensic", translation: "forense", context: "modern forensic analysis...", addedFrom: "AI Assistant" }
 ];
 
 export const mockChatHistory: ChatMessage[] = [
-  { sender: "user", text: "What does 'weathered' mean in this context?" },
-  { sender: "ai", text: "In this context, 'weathered' means to have endured or survived difficult conditions over time. The stone walls have withstood many storms throughout the centuries." },
-  { sender: "user", text: "How do I translate 'countless'?" },
-  // FIX: Corrected syntax error in the sender property. It was `sender:ai"` instead of `sender: "ai"`.
-  { sender: "ai", text: "'Countless' means 'innumerables' or 'incontables' in Spanish. It indicates a very large number that cannot be easily counted." }
+  { sender: "user", text: "What does 'methodically' mean in this context?" },
+  { sender: "ai", text: "In this context, 'methodically' means to do something in a systematic, organized way following a logical order. The inspector examines evidence step by step with careful attention to detail." },
+  { sender: "user", text: "How do I translate 'brownstone'?" },
+  { sender: "ai", text: "'Brownstone' means 'casa de piedra rojiza' in Spanish. It refers to a type of building made from brown sandstone, common in New York City." }
 ];
 
 export const initialStickyNotes: StickyNoteData[] = [
