@@ -436,11 +436,14 @@ const App: React.FC = () => {
             setLearningFragments(newFragments);
         } else {
             // 5. No more pending fragments, session is complete
-            const firstFragmentId = learningFragments[0]?.id;
-            if (firstFragmentId !== undefined) {
-                const sessionTranslations = mockCorrectTranslations.slice(firstFragmentId, firstFragmentId + learningFragments.length);
-                const fullTranslation = sessionTranslations.join(' ');
-                setCompletedSessionTranslation(fullTranslation);
+            try {
+                const { geminiService } = await import('./services/geminiService');
+                const sessionTexts = fragmentsAfterEvaluation.map(f => f.text).join(' ');
+                const sessionTranslation = await geminiService.translateText(sessionTexts, targetLanguage);
+                setCompletedSessionTranslation(sessionTranslation);
+            } catch (error) {
+                console.error('Session translation failed:', error);
+                setCompletedSessionTranslation('Translation unavailable');
             }
             
             setLearningFragments(fragmentsAfterEvaluation); // Save final state of completed fragments
@@ -464,33 +467,14 @@ const App: React.FC = () => {
         setPendingSessionOffset(newOffset);
     };
 
-    const handleStartSessionFromText = (selectedText: string) => {
-        const textToUse = customText || bookText;
-        const fullText = textToUse.trim();
-        const firstSelectedSentence = selectedText.trim().split(/(?<=[.?!])\s+/)[0];
-        const selectionStartIndex = fullText.indexOf(firstSelectedSentence);
-
-        if (selectionStartIndex === -1) {
-            console.error("Selected text not found in book.");
+    const handleStartSessionFromIndex = (sentenceIndex: number) => {
+        const sentences = bookText.trim().split(/(?<=[.?!])\s+/);
+        if (sentenceIndex < 0 || sentenceIndex >= sentences.length) {
+            console.error("Invalid sentence index provided for new session.");
             return;
         }
-
-        let sentenceStartIndex = selectionStartIndex;
-        while (sentenceStartIndex > 0) {
-            const char = fullText[sentenceStartIndex - 1];
-            if ('.?!'.includes(char)) break;
-            sentenceStartIndex--;
-        }
-        while (/\s/.test(fullText[sentenceStartIndex])) {
-            sentenceStartIndex++;
-        }
-
-        const textUpToStart = fullText.substring(0, sentenceStartIndex);
-        const sentencesBefore = textUpToStart.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 0);
-        const newOffset = sentencesBefore.length;
-
-        setSessionOffset(newOffset);
-        setPendingSessionOffset(newOffset);
+        setSessionOffset(sentenceIndex);
+        setPendingSessionOffset(sentenceIndex);
     };
 
     const handleVocabularyUpdate = (newWords: Array<{word: string; translation: string; context: string}>) => {
@@ -700,7 +684,7 @@ const App: React.FC = () => {
                         bookText={customText || bookText}
                         learningFragments={learningFragments}
                         currentFragmentId={currentFragmentId}
-                        onStartNewSession={handleStartSessionFromText}
+                        onStartNewSession={handleStartSessionFromIndex}
                         initialPosition={getWindow('book')!.position}
                         initialSize={getWindow('book')!.size}
                         zIndex={getWindow('book')!.zIndex}

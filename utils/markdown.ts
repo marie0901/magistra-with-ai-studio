@@ -14,9 +14,9 @@ export function parseMarkdown(text: string): string {
     // Code blocks
     .replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg overflow-x-auto"><code>$1</code></pre>')
     // Tables
-    .replace(/(\|[^\n]+\|\n)(\|[-:| ]+\|\n)((\|[^\n]+\|\n?)+)/g, (match, header, separator, body) => {
+    .replace(/(\|[^\n]+\|)\n(\|[-:| ]+\|)\n((\|[^\n]+\|(?:\n|$))+)/g, (match, header, separator, body) => {
       const headerCells = header.trim().split('|').slice(1, -1).map(cell => `<th class="border border-slate-300 dark:border-slate-600 px-3 py-2 bg-slate-50 dark:bg-slate-700 font-semibold">${cell.trim()}</th>`).join('');
-      const bodyRows = body.trim().split('\n').map(row => {
+      const bodyRows = body.trim().split('\n').filter(row => row.trim()).map(row => {
         const cells = row.split('|').slice(1, -1).map(cell => `<td class="border border-slate-300 dark:border-slate-600 px-3 py-2">${cell.trim()}</td>`).join('');
         return `<tr>${cells}</tr>`;
       }).join('');

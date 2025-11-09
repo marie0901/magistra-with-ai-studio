@@ -9,7 +9,7 @@ interface BookViewWindowProps {
   bookText: string;
   learningFragments: Fragment[];
   currentFragmentId: number | null;
-  onStartNewSession: (selectedText: string) => void;
+  onStartNewSession: (sentenceIndex: number) => void;
   initialPosition: { x: number; y: number };
   initialSize: { width: number | string; height: number | string };
   zIndex: number;
@@ -40,7 +40,7 @@ const getFragmentSpanClasses = (status: Fragment['status'], isCurrent: boolean):
 export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learningFragments, currentFragmentId, onStartNewSession, isMaximized, onMaximizeToggle, onReset, onCollapse, ...windowProps }) => {
     const currentFragmentRef = useRef<HTMLSpanElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
-    const [popup, setPopup] = useState<{ x: number, y: number, text: string } | null>(null);
+    const [popup, setPopup] = useState<{ x: number, y: number, sentenceId: number } | null>(null);
 
     useEffect(() => {
         currentFragmentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -53,28 +53,44 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
         const handleMouseUp = () => {
             const selection = window.getSelection();
             if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-                setPopup(null);
                 return;
             }
             
             const selectedText = selection.toString().trim();
+            if (!selectedText) {
+                setPopup(null);
+                return;
+            }
 
-            if (selectedText) {
-                const range = selection.getRangeAt(0);
+            const range = selection.getRangeAt(0);
+            let node = range.startContainer;
+            
+            let sentenceSpan: HTMLElement | null = null;
+            if (node.nodeType === Node.TEXT_NODE) {
+                node = node.parentNode!;
+            }
+            if (node instanceof HTMLElement) {
+                sentenceSpan = node.closest('[data-sentence-id]');
+            }
+            
+            const sentenceIdStr = sentenceSpan?.getAttribute('data-sentence-id');
+
+            if (sentenceIdStr) {
+                const sentenceId = parseInt(sentenceIdStr, 10);
                 const containerRect = contentEl.getBoundingClientRect();
                 const rangeRect = range.getBoundingClientRect();
                 
                 const x = rangeRect.left + rangeRect.width / 2 - containerRect.left + contentEl.scrollLeft;
                 const y = rangeRect.top - containerRect.top - 10 + contentEl.scrollTop;
 
-                setPopup({ x, y, text: selectedText });
+                setPopup({ x, y, sentenceId });
             } else {
                 setPopup(null);
             }
         };
 
         const handleMouseDown = (event: MouseEvent) => {
-            if (popup && !(event.target as Element)?.closest('.session-popup')) {
+            if (!(event.target as Element)?.closest('.session-popup')) {
                 setPopup(null);
             }
         };
@@ -88,39 +104,67 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
         };
     }, [popup]);
 
-    const { preSessionText, postSessionText, originalSentences } = useMemo(() => {
-        if (learningFragments.length === 0 || !bookText) {
-            return { preSessionText: bookText, postSessionText: '', originalSentences: [] };
+    const renderedContent = useMemo(() => {
+        if (!bookText) return null;
+
+        const sentences = bookText.trim().split(/(?<=[.?!])\s+/);
+        const fragmentsById = new Map(learningFragments.map(f => [f.id, f]));
+
+        const allSentenceNodes = sentences.map((sentence, index) => {
+            const fragment = fragmentsById.get(index);
+            
+            if (fragment) {
+                const typedFragment = fragment as Fragment;
+                const isCurrent = typedFragment.id === currentFragmentId;
+                const classes = getFragmentSpanClasses(typedFragment.status, isCurrent);
+                return (
+                    <span key={index} ref={isCurrent ? currentFragmentRef : null} className={classes} data-sentence-id={index}>
+                        {typedFragment.isSimplified && (
+                            <span title="This text was simplified by AI.">
+                                <SparklesIcon className="inline-block w-3.5 h-3.5 mr-1 text-blue-500 dark:text-blue-400" />
+                            </span>
+                        )}
+                        {sentence}{' '}
+                    </span>
+                );
+            } else {
+                return (
+                    <span key={index} data-sentence-id={index}>
+                        {sentence}{' '}
+                    </span>
+                );
+            }
+        });
+
+        if (learningFragments.length === 0) {
+            return <p className="opacity-50 transition-opacity duration-300 non-session-text">{allSentenceNodes}</p>;
         }
 
-        // Use the actual book text to find session boundaries
-        const originalSentences = bookText.trim().split(/(?<=[.?!])\s+/);
-        
         const firstFragmentId = learningFragments[0].id;
         const lastFragmentId = learningFragments[learningFragments.length - 1].id;
 
-        // Ensure IDs are within bounds of the original text sentences
-        if (firstFragmentId >= originalSentences.length || lastFragmentId >= originalSentences.length) {
-            return { preSessionText: bookText, postSessionText: '', originalSentences };
-        }
+        const preSessionContent = allSentenceNodes.slice(0, firstFragmentId);
+        const sessionContent = allSentenceNodes.slice(firstFragmentId, lastFragmentId + 1);
+        const postSessionContent = allSentenceNodes.slice(lastFragmentId + 1);
 
-        const firstOriginalText = originalSentences[firstFragmentId];
-        const lastOriginalText = originalSentences[lastFragmentId];
+        return (
+            <>
+                <p className="opacity-50 transition-opacity duration-300 non-session-text">{preSessionContent}</p>
+                <div className="relative text-center my-4">
+                    <hr className="border-slate-300 dark:border-slate-600"/>
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                        CURRENT LEARNING SESSION
+                    </span>
+                </div>
+                <div className="space-y-2">{sessionContent}</div>
+                <div className="relative text-center mt-4 mb-2">
+                    <hr className="border-slate-300 dark:border-slate-600"/>
+                </div>
+                <p className="opacity-50 transition-opacity duration-300 non-session-text">{postSessionContent}</p>
+            </>
+        );
 
-        const startIndex = bookText.indexOf(firstOriginalText);
-        const lastFragmentIndex = bookText.indexOf(lastOriginalText, startIndex);
-
-        if (startIndex === -1 || lastFragmentIndex === -1) {
-             return { preSessionText: bookText, postSessionText: '', originalSentences };
-        }
-
-        const endIndex = lastFragmentIndex + lastOriginalText.length;
-
-        const pre = bookText.substring(0, startIndex);
-        const post = bookText.substring(endIndex);
-
-        return { preSessionText: pre, postSessionText: post, originalSentences };
-    }, [bookText, learningFragments]);
+    }, [bookText, learningFragments, currentFragmentId]);
 
     return (
         <DraggableWindow title="Book View" {...windowProps} isMaximized={isMaximized} onMaximizeToggle={onMaximizeToggle} onReset={onReset} onCollapse={onCollapse}>
@@ -130,7 +174,7 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
                         className="session-popup absolute z-10 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow-lg hover:bg-blue-700 transition-all animate-fade-in flex items-center gap-1.5"
                         style={{ top: `${popup.y}px`, left: `${popup.x}px`, transform: 'translate(-50%, -100%)' }}
                         onClick={() => {
-                            onStartNewSession(popup.text);
+                            onStartNewSession(popup.sentenceId);
                             setPopup(null);
                         }}
                         onMouseDown={e => e.stopPropagation()}
@@ -139,50 +183,7 @@ export const BookViewWindow: React.FC<BookViewWindowProps> = ({ bookText, learni
                         Start Session Here
                     </button>
                 )}
-                <p className="opacity-50 transition-opacity duration-300 non-session-text">
-                    {preSessionText}
-                </p>
-
-                {learningFragments.length > 0 && (
-                    <>
-                        <div className="relative text-center my-4">
-                            <hr className="border-slate-300 dark:border-slate-600"/>
-                            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
-                                CURRENT LEARNING SESSION
-                            </span>
-                        </div>
-
-                        <div className="space-y-2">
-                            {learningFragments.map(fragment => {
-                                const isCurrent = fragment.id === currentFragmentId;
-                                const classes = getFragmentSpanClasses(fragment.status, isCurrent);
-                                const originalText = originalSentences[fragment.id] || fragment.text;
-                                return (
-                                    <span
-                                        key={fragment.id}
-                                        ref={isCurrent ? currentFragmentRef : null}
-                                        className={classes}
-                                    >
-                                        {fragment.isSimplified && (
-                                            <span title="This text was simplified by AI.">
-                                                <SparklesIcon className="inline-block w-3.5 h-3.5 mr-1 text-blue-500 dark:text-blue-400" />
-                                            </span>
-                                        )}
-                                        {originalText}{' '}
-                                    </span>
-                                );
-                            })}
-                        </div>
-                        
-                        <div className="relative text-center mt-4 mb-2">
-                            <hr className="border-slate-300 dark:border-slate-600"/>
-                        </div>
-                    </>
-                )}
-
-                <p className="opacity-50 transition-opacity duration-300 non-session-text">
-                    {postSessionText}
-                </p>
+                {renderedContent}
             </div>
         </DraggableWindow>
     );

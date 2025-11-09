@@ -18,7 +18,7 @@ export class GeminiService {
     try {
       const response = await ai.models.generateContent({
         model: 'models/gemini-2.5-pro',
-        contents: `ORIGINAL ENGLISH TEXT: "${original}"
+        contents: `ORIGINAL TEXT: "${original}"
 USER'S ${targetLang.toUpperCase()} TRANSLATION: "${translation}"`,
         config: {
           systemInstruction: `You are a professional ${targetLang} language assessment expert with 20+ years of experience. Your task is to rigorously evaluate translation quality.
@@ -61,7 +61,7 @@ Provide specific feedback citing exact errors and corrections.`,
                 items: {
                   type: Type.OBJECT,
                   properties: {
-                    word: { type: Type.STRING, description: 'English word from original text' },
+                    word: { type: Type.STRING, description: 'Word from original text' },
                     translation: { type: Type.STRING, description: `Correct ${targetLang} translation` },
                     context: { type: Type.STRING, description: 'Usage context or grammar note' }
                   }
@@ -178,6 +178,23 @@ ${context ? `\nContext: ${context}` : ''}`,
     } catch (error) {
       console.error('Text simplification failed:', error);
       return text; // Return original text on error
+    }
+  }
+
+  async translateText(text: string, targetLang: string): Promise<string> {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'models/gemini-2.5-pro',
+        contents: `Translate this text to ${targetLang}: "${text}"`,
+        config: {
+          systemInstruction: `You are a professional translator. Provide only the translation without any explanations or additional text.`,
+        }
+      });
+      
+      return response.text.trim();
+    } catch (error) {
+      console.error('Text translation failed:', error);
+      return 'Translation unavailable';
     }
   }
 
