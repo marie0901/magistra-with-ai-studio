@@ -5,7 +5,7 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/magistra-with-ai-studio'
       - '--build-arg'
-      - 'VITE_GEMINI_API_KEY=AIzaSyAVyDA3997ih9xNXdy9phEiThmEOsxIq_0'
+      - 'VITE_GEMINI_API_KEY=${_GEMINI_API_KEY}'
       - '.'
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/magistra-with-ai-studio']
@@ -17,7 +17,7 @@ steps:
       - '--image=gcr.io/$PROJECT_ID/magistra-with-ai-studio'
       - '--region=europe-west1'
       - '--platform=managed'
-      - '--set-env-vars=VITE_GEMINI_API_KEY=AIzaSyAVyDA3997ih9xNXdy9phEiThmEOsxIq_0'
+      - '--set-env-vars=VITE_GEMINI_API_KEY=${_GEMINI_API_KEY}'
       - '--allow-unauthenticated'
 
 options:

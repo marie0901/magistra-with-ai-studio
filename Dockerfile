@@ -22,7 +22,7 @@ RUN yarn install
 COPY . .
 
 # Accept build argument for API key
-ARG VITE_GEMINI_API_KEY=AIzaSyAVyDA3997ih9xNXdy9phEiThmEOsxIq_0
+ARG VITE_GEMINI_API_KEY
 ENV VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY
 
 # Debug: Show environment variables
