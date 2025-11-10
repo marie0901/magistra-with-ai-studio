@@ -1,4 +1,6 @@
 steps:
+  - name: 'ubuntu'
+    args: ['echo', 'Test variable from trigger: ${_TEST_VAR}']
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'build'
