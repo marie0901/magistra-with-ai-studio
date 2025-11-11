@@ -148,6 +148,7 @@ ${context ? `\nContext: ${context}` : ''}`,
 - Prioritize core meaning over nuance. It is acceptable to lose some subtlety for the sake of clarity.
 - Break down sentences into shorter, simpler structures.
 - CRITICAL: Your response MUST contain ONLY the simplified text. Do NOT include any explanations, apologies, or conversational filler.
+- IMPORTANT: The simplified text must be in the SAME LANGUAGE as the provided text.
 - You must attempt to simplify every text. Do not return the original text unless it is already composed of the simplest possible words (e.g., "The cat sat.").`,
         }
       });

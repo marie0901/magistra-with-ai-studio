@@ -438,8 +438,12 @@ const App: React.FC = () => {
             // 5. No more pending fragments, session is complete
             try {
                 const { geminiService } = await import('./services/geminiService');
-                const sessionTexts = fragmentsAfterEvaluation.map(f => f.text).join(' ');
-                const sessionTranslation = await geminiService.translateText(sessionTexts, targetLanguage);
+                // Use original texts from session start, not simplified versions
+                const originalTexts = learningFragments.map(f => {
+                    const sentences = (customText || bookText).trim().split(/(?<=[.?!])\s+/);
+                    return sentences[f.id] || f.text;
+                }).join(' ');
+                const sessionTranslation = await geminiService.translateText(originalTexts, targetLanguage);
                 setCompletedSessionTranslation(sessionTranslation);
             } catch (error) {
                 console.error('Session translation failed:', error);
