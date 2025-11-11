@@ -17,7 +17,7 @@ export class GeminiService {
   }> {
     try {
       const response = await ai.models.generateContent({
-        model: 'models/gemini-2.5-pro',
+        model: 'models/gemini-2.5-flash',
         contents: `ORIGINAL TEXT: "${original}"
 USER'S ${targetLang.toUpperCase()} TRANSLATION: "${translation}"`,
         config: {
@@ -92,7 +92,7 @@ Provide specific feedback citing exact errors and corrections.`,
   async chatResponse(message: string, context?: string): Promise<{text: string; stickerTitle: string}> {
     try {
       const response = await ai.models.generateContent({
-        model: 'models/gemini-2.5-pro',
+        model: 'models/gemini-2.5-flash',
         contents: `USER'S QUESTION: "${message}"`,
         config: {
           systemInstruction: `You are a grammar-focused language assistant. Provide direct, concise answers without greetings, encouragement, or conversational elements.
@@ -139,7 +139,7 @@ ${context ? `\nContext: ${context}` : ''}`,
   async simplifyText(text: string, targetLevel: string = 'beginner'): Promise<string> {
     try {
       const response = await ai.models.generateContent({
-                    model: 'models/gemini-2.5-pro',
+                    model: 'models/gemini-2.5-flash',
                     contents: `Simplify this text for a ${targetLevel} learner: "${text}"`,        config: {
           systemInstruction: `You are an expert text simplification engine for language learners. Your task is to rewrite text for a student whose proficiency in the target language is extremely low, around 10 out of 100. Use a very limited vocabulary and extremely simple sentence structures, as if explaining to a young child.
 
@@ -184,7 +184,7 @@ ${context ? `\nContext: ${context}` : ''}`,
   async translateText(text: string, targetLang: string): Promise<string> {
     try {
       const response = await ai.models.generateContent({
-        model: 'models/gemini-2.5-pro',
+        model: 'models/gemini-2.5-flash',
         contents: `Translate this text to ${targetLang}: "${text}"`,
         config: {
           systemInstruction: `You are a professional translator. Provide only the translation without any explanations or additional text.`,
@@ -201,7 +201,7 @@ ${context ? `\nContext: ${context}` : ''}`,
   async extractVocabulary(text: string, targetLang: string): Promise<Array<{word: string; translation: string; context: string}>> {
     try {
       const response = await ai.models.generateContent({
-        model: 'models/gemini-2.5-pro',
+        model: 'models/gemini-2.5-flash',
         contents: `Text: "${text}"`,
         config: {
           systemInstruction: `Extract 3-5 challenging vocabulary words from this text for a ${targetLang} language learner. For each word, provide the ${targetLang} translation and a brief context note.`,
