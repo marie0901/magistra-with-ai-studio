@@ -22,6 +22,8 @@ export interface ChatMessage {
   sender: 'user' | 'ai';
   text: string;
   stickerTitle?: string;
+  isError?: boolean;
+  originalMessage?: string;
 }
 
 export interface StickyNoteData {

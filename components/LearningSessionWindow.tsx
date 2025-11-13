@@ -67,6 +67,18 @@ export const LearningSessionWindow: React.FC<LearningSessionWindowProps> = ({ fr
             // No automatic addition to dictionary
         } catch (error) {
             console.error('Translation evaluation failed:', error);
+            
+            // Check for 503 error and show retry dialog
+            const { parseGeminiError, showRetryDialog } = await import('../services/errorHandler');
+            const apiError = parseGeminiError(error);
+            if (apiError?.code === 503) {
+                const retry = await showRetryDialog('AI model is overloaded. Translation evaluation temporarily unavailable.');
+                if (retry) {
+                    setIsLoading(false);
+                    return handleCheck();
+                }
+            }
+            
             let errorFeedback = "Unable to evaluate translation right now. Keep practicing!";
             
             if (error instanceof Error) {

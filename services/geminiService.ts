@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
+import { APIError, parseGeminiError, showRetryDialog } from './errorHandler';
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
 
@@ -82,6 +83,11 @@ Provide specific feedback citing exact errors and corrections.`,
       };
     } catch (error) {
       console.error('Translation evaluation failed:', error);
+      const apiError = parseGeminiError(error);
+      if (apiError?.code === 503) {
+        const retry = await showRetryDialog('AI model is overloaded. Translation evaluation temporarily unavailable.');
+        if (retry) return this.evaluateTranslation(original, translation, targetLang);
+      }
       return {
         score: 50,
         feedback: 'Unable to evaluate translation right now. Keep practicing!',
@@ -129,6 +135,11 @@ ${context ? `\nContext: ${context}` : ''}`,
       };
     } catch (error) {
       console.error('Chat response failed:', error);
+      const apiError = parseGeminiError(error);
+      if (apiError?.code === 503) {
+        const retry = await showRetryDialog('AI model is overloaded. Chat temporarily unavailable.');
+        if (retry) return this.chatResponse(message, context);
+      }
       return {
         text: "I'm having trouble responding right now, but I'm here to help with your language learning!",
         stickerTitle: 'Grammar Tip'
@@ -178,7 +189,12 @@ ${context ? `\nContext: ${context}` : ''}`,
       return simplified || text; // Return simplified text, or original if empty
     } catch (error) {
       console.error('Text simplification failed:', error);
-      return text; // Return original text on error
+      const apiError = parseGeminiError(error);
+      if (apiError?.code === 503) {
+        const retry = await showRetryDialog('AI model is overloaded. Text simplification temporarily unavailable.');
+        if (retry) return this.simplifyText(text, targetLevel);
+      }
+      return text;
     }
   }
 
@@ -195,6 +211,11 @@ ${context ? `\nContext: ${context}` : ''}`,
       return response.text.trim();
     } catch (error) {
       console.error('Text translation failed:', error);
+      const apiError = parseGeminiError(error);
+      if (apiError?.code === 503) {
+        const retry = await showRetryDialog('AI model is overloaded. Translation temporarily unavailable.');
+        if (retry) return this.translateText(text, targetLang);
+      }
       return 'Translation unavailable';
     }
   }

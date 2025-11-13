@@ -1,4 +1,5 @@
 import { GoogleGenAI, Modality } from '@google/genai';
+import { parseGeminiError, showRetryDialog } from './errorHandler';
 
 // Audio Decoding Utilities
 function decode(base64: string): Uint8Array {
@@ -91,6 +92,11 @@ export class AudioService {
       }
     } catch (error) {
       console.error("Gemini TTS failed:", error);
+      const apiError = parseGeminiError(error);
+      if (apiError?.code === 503) {
+        const retry = await showRetryDialog('AI model is overloaded. Text-to-speech temporarily unavailable.');
+        if (retry) return this.generateSpeech(text, language);
+      }
       this.fallbackTTS(text, language);
       return null;
     }

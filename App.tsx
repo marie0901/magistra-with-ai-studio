@@ -447,6 +447,8 @@ const App: React.FC = () => {
                 setCompletedSessionTranslation(sessionTranslation);
             } catch (error) {
                 console.error('Session translation failed:', error);
+                // Note: 503 error handling is already implemented in geminiService.translateText
+                // If user cancels the retry dialog, it returns 'Translation unavailable'
                 setCompletedSessionTranslation('Translation unavailable');
             }
             
@@ -534,9 +536,17 @@ const App: React.FC = () => {
             
             const fallbackResponse: ChatMessage = {
                 sender: 'ai',
-                text: errorMessage
+                text: `${errorMessage}\n\n<button onclick="window.retryLastMessage?.()" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Retry</button>`,
+                isError: true,
+                originalMessage: message
             };
             setChatHistory(prev => [...prev, fallbackResponse]);
+            
+            // Set up retry function
+            (window as any).retryLastMessage = () => {
+                setChatHistory(prev => prev.filter(msg => !msg.isError));
+                handleSendMessage(message);
+            };
         }
     };
 
