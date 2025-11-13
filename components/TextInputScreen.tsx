@@ -30,7 +30,7 @@ export const TextInputScreen: React.FC<TextInputScreenProps> = ({ onStartWithSam
             <BookTextIcon className="w-16 h-16 mx-auto mb-4 text-blue-500" />
             <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Use Sample Text</h2>
             <p className="text-slate-500 dark:text-slate-400">
-              Start immediately with a pre-loaded story about Elara the inventor.
+              Start immediately with a pre-loaded detective story about Inspector Blackwood.
             </p>
           </div>
           
